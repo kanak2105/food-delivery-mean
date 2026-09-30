@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: cravebite-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: food_delivery_mean
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - mean-network
+
+  # 2. Node.js & Express API Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cravebite-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/food_delivery_mean
+      JWT_SECRET: super_secret_food_delivery_jwt_key_2026
+      JWT_EXPIRES_IN: 7d
+      NODE_ENV: production
+    depends_on:
+      - mongodb
+    networks:
+      - mean-network
+
+  # 3. Angular Frontend (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cravebite-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - mean-network
+
+volumes:
+  mongo-data:
+
+networks:
+  mean-network:
+    driver: bridge
